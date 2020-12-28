@@ -1,0 +1,188 @@
+package InvetoRestProject; 
+
+import java.awt.Color;
+import java.awt.EventQueue;
+
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+
+import java.awt.Font;
+import java.awt.Panel;
+import javax.swing.ImageIcon;
+import javax.swing.JTextField;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.sql.*;
+
+import javax.swing.JButton;
+import javax.swing.JPasswordField;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+
+public class Login {
+
+	private JFrame frmInventorest;
+	private JTextField txtUserId;
+	private JPasswordField pwdPassword;
+	private JLabel lblNewLabel;
+	private JLabel label;
+
+	/**
+	 * Launch the application.
+	 */
+	public static void main(String[] args) {
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					Login window = new Login();
+					window.frmInventorest.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+	Connection connection=null;
+	
+	/**
+	 * Create the application.
+	 */
+	public Login() {
+		initialize();
+		connection=SqliteConnection.dbConnector();
+	}
+
+	/**
+	 * Initialize the contents of the frame.
+	 */
+	private void initialize() {
+		frmInventorest = new JFrame();
+		frmInventorest.setTitle("InventoRest");
+		frmInventorest.setBounds(100, 100, 1200, 900);
+		frmInventorest.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frmInventorest.getContentPane().setLayout(null);
+		
+		JLabel lblInventorest = new JLabel("InventoRest");
+		lblInventorest.setFont(new Font("SansSerif", Font.BOLD | Font.ITALIC, 84));
+		lblInventorest.setBounds(28, 0, 503, 128);
+		lblInventorest.setForeground(Color.decode("#35aadf"));
+		frmInventorest.getContentPane().add(lblInventorest);
+		
+		JLabel StockIcon = new JLabel("");
+		StockIcon.setBounds(526, 26, 97, 88);
+		frmInventorest.getContentPane().add(StockIcon);
+		StockIcon.setIcon(new ImageIcon(Login.class.getResource("/stock.png")));
+		
+		txtUserId = new JTextField();
+		txtUserId.addFocusListener(new FocusAdapter() {
+			@Override
+			public void focusGained(FocusEvent arg0) {
+				if(txtUserId.getText().equals("UserID"))
+					txtUserId.setText("");
+				txtUserId.setForeground(Color.black);
+			}
+			@Override
+			public void focusLost(FocusEvent e) {
+				if(txtUserId.getText().equals(""))
+					{
+					txtUserId.setText("UserID");
+					txtUserId.setForeground(Color.LIGHT_GRAY);
+					}
+			}
+		});
+		txtUserId.setHorizontalAlignment(SwingConstants.CENTER);
+		txtUserId.setFont(new Font("Tahoma", Font.PLAIN, 50));
+		txtUserId.setForeground(Color.LIGHT_GRAY);
+		txtUserId.setBackground(Color.WHITE);
+		txtUserId.setText("UserID");
+		txtUserId.setBounds(430, 365, 254, 67);
+		frmInventorest.getContentPane().add(txtUserId);
+		txtUserId.setColumns(10);
+		
+		JButton LoginButton = new JButton("Login");
+		LoginButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				try {
+					if(!(txtUserId.getText().equals(""))&&!(pwdPassword.getText().equals(""))
+							&&!(txtUserId.getText().equals("UserID"))&&!(pwdPassword.getText().equals("Password")))
+					{
+						String query="select * from users where id=? and password=? ";
+						PreparedStatement pst=connection.prepareStatement(query);
+						pst.setString(0, txtUserId.getText());
+						pst.setString(1, pwdPassword.getText());
+						int count=0;
+						ResultSet rs=pst.executeQuery();
+						while(rs.next())
+						{
+							count++;
+							
+						}
+						if(count == 1)
+						{
+							JOptionPane.showMessageDialog(null,"Username and password are correct");
+
+						}
+						else if(count>1)
+						{
+							JOptionPane.showMessageDialog(null,"Duplicate Username and password ");
+
+						}
+						else {
+							JOptionPane.showMessageDialog(null,"Username and password are not correct");
+
+						}
+					}
+					else
+						JOptionPane.showMessageDialog(null,"Please fill the txtfields");
+				}catch(Exception e)
+				{
+					JOptionPane.showMessageDialog(null,e);
+					
+				}
+			}
+		});
+		
+		LoginButton.setFont(new Font("Tahoma", Font.BOLD, 25));
+		LoginButton.setBounds(484, 578, 145, 48);
+		LoginButton.setBackground(Color.decode("#35aadf"));
+		frmInventorest.getContentPane().add(LoginButton);
+		
+		pwdPassword = new JPasswordField();
+		pwdPassword.setForeground(Color.LIGHT_GRAY);
+		pwdPassword.addFocusListener(new FocusAdapter() {
+			@Override
+			public void focusGained(FocusEvent e) {
+				if(pwdPassword.getText().equals("Password"))
+					pwdPassword.setText("");
+				pwdPassword.setForeground(Color.black);
+			}
+			@Override
+			public void focusLost(FocusEvent e) {
+				if(pwdPassword.getText().equals(""))
+					{
+						pwdPassword.setText("Password");
+						pwdPassword.setForeground(Color.LIGHT_GRAY);
+					}
+			}
+		});
+		pwdPassword.setHorizontalAlignment(SwingConstants.CENTER);
+		pwdPassword.setText("Password");
+		pwdPassword.setBounds(430, 465, 254, 67);
+		frmInventorest.getContentPane().add(pwdPassword);
+		
+		lblNewLabel = new JLabel("");
+		lblNewLabel.setIcon(new ImageIcon(Login.class.getResource("/user.png")));
+		lblNewLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		lblNewLabel.setBounds(336, 369, 85, 63);
+		frmInventorest.getContentPane().add(lblNewLabel);
+		
+		label = new JLabel("");
+		label.setIcon(new ImageIcon(Login.class.getResource("/password1.png")));
+		label.setHorizontalAlignment(SwingConstants.CENTER);
+		label.setBounds(336, 453, 97, 79);
+		frmInventorest.getContentPane().add(label);
+	}
+}

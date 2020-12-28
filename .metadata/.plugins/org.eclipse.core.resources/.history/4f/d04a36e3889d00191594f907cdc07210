@@ -1,0 +1,280 @@
+package InvetoRestProject;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.swing.*;
+
+import InvetoRestProject.classes.*;
+public class SqliteConnection {
+	Connection conn=null;
+	
+	public static Connection dbConnector() {
+		try {
+			Class.forName("org.sqlite.JDBC");
+			String dbpath = "jdbc:sqlite:"+System.getProperty("user.dir")+"\\src\\InvetoRestProject\\InventoRestData.db";
+			
+			Connection conn= DriverManager.getConnection(dbpath);
+			//JOptionPane.showMessageDialog(null,"Connection Successful");
+			return conn;
+		}catch(Exception e)
+		{
+			JOptionPane.showMessageDialog(null,e);
+			return null;
+		}
+		
+		
+	}
+	 public static Boolean insertUser(User user)//m = manager or w= worker
+	 {
+	        String sql = "INSERT INTO users(id,firstName,lastName,email,password,mw) VALUES(?,?,?,?,?,?)";
+	 
+	        try (Connection conn = dbConnector();
+	                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	            pstmt.setString(1, user.getId());
+	            pstmt.setString(2, user.getFirstname());
+	            pstmt.setString(3, user.getLastname());
+	            if(user instanceof Manager)
+	            	{
+	            		pstmt.setString(4, ((Manager)user).getEmail());
+	            		pstmt.setString(6, "m");
+	            	}
+	            else
+	            	{
+	            	pstmt.setString(4, "");
+            		pstmt.setString(6, "w");
+	            	}
+	            pstmt.setString(5, user.getPassword());
+
+	            pstmt.executeUpdate();
+	            JOptionPane.showMessageDialog(null,"User added successfuly!");
+	            return true;
+	        } catch (SQLException e) {
+	            JOptionPane.showMessageDialog(null,e.getMessage());
+	            return false;
+	        }
+	        
+	    }
+	 //removes user
+	 public static boolean removeUser(String id)
+	 {
+		 String query = "DELETE FROM Users WHERE id=?";
+		 try (Connection conn = dbConnector();
+	                PreparedStatement pstmt = conn.prepareStatement(query)) {
+			 		//sets the passed parameter instead of ?
+			 		pstmt.setString(1, id);
+			 		//executes the delete statement
+			 		pstmt.executeUpdate();
+			 		JOptionPane.showMessageDialog(null,"Row deleted.");
+			 		return true;
+			 		
+		 }catch (SQLException e) {
+	            JOptionPane.showMessageDialog(null,e.getMessage());
+	            return false;
+	        }
+	 }
+	
+	 //checks if user appears
+	 public static int checkUser(String id,String pass)
+	 {
+		 String query="select * from users where id=? and password=? ";
+		 try(Connection conn=dbConnector();
+			PreparedStatement pstmt=conn.prepareStatement(query)){
+				pstmt.setString(1, id);
+				pstmt.setString(2, pass);
+				ResultSet rs=pstmt.executeQuery();//excuting query
+				int count=0;//counting rows 
+				while(rs.next())
+				{
+					count++;	
+				}
+				return count;
+		 }
+		catch(SQLException e) {
+			JOptionPane.showMessageDialog(null, e.getMessage());
+			return 0;
+		}
+	
+	 }
+	 //checks if user is manager or worker
+	 public static Object managerOrUser(String id) {
+		 String query="select mw from users where id=?";
+		 try(Connection conn=dbConnector();
+					PreparedStatement pstmt=conn.prepareStatement(query)){
+			pstmt.setString(1,id);
+			ResultSet rs=pstmt.executeQuery();
+			Object obj=rs.getObject(1);//returns the column number 1 as object
+			return obj;
+		 }catch(SQLException e) {
+				JOptionPane.showMessageDialog(null, e.getMessage());
+				return null;
+			}
+	 }
+	 //edits user
+	 public static boolean editUser(User user,String id) {
+		 String query = "UPDATE users SET id = ? , firstname = ? , lastname = ? , email = ? , password = ? , mw = ? WHERE id=?";
+		  try (Connection conn = dbConnector();
+	                PreparedStatement pstmt = conn.prepareStatement(query)) {
+	            pstmt.setString(1, user.getId());
+	            pstmt.setString(2, user.getFirstname());
+	            pstmt.setString(3, user.getLastname());
+	            if(user instanceof Manager)
+	            	{
+	            		pstmt.setString(4, ((Manager)user).getEmail());
+	            		pstmt.setString(6, "m");
+	            	}
+	            else
+	            	{
+		            	pstmt.setString(4, "");
+		            	pstmt.setString(6, "w");
+	            	}
+	            pstmt.setString(5, user.getPassword());
+	            pstmt.setString(7, id);
+	            
+	            pstmt.executeUpdate();
+	            JOptionPane.showMessageDialog(null,"User Edited successfuly!");
+	            return true;
+	        } catch (SQLException e) {
+	            JOptionPane.showMessageDialog(null,e.getMessage());
+	            return false;
+	        }
+	        
+	 }
+	 public static boolean insertProvider(Provider p)
+	 {
+		 String sql = "INSERT INTO providers(name,email,phone) VALUES(?,?,?)";
+		 
+	        try (Connection conn = dbConnector();
+	                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	            pstmt.setString(1, p.getName());
+	            pstmt.setString(2, p.getEmail());
+	            pstmt.setString(3, p.getPhone());
+	            
+	            pstmt.executeUpdate();
+	            JOptionPane.showMessageDialog(null,"Provider added successfuly!");
+	            return true;
+	        
+	        } catch (SQLException e) {
+	            JOptionPane.showMessageDialog(null,e.getMessage());
+	            return false;
+	        }
+		 
+	 }
+	 public static boolean removeProvider(String name)
+	 {
+		 String query = "DELETE FROM Providers WHERE name=?";
+		 try (Connection conn = dbConnector();
+	                PreparedStatement pstmt = conn.prepareStatement(query)) {
+			 		//sets the passed parameter instead of ?
+			 		pstmt.setString(1, name);
+			 		//executes the delete statement
+			 		pstmt.executeUpdate();
+			 		JOptionPane.showMessageDialog(null,"Row deleted.");
+			 		return true;
+			 		
+		 }catch (SQLException e) {
+	            JOptionPane.showMessageDialog(null,e.getMessage());
+	            return false;
+	        }
+	 }
+	 /*
+	  * @param name is the past name before change
+	  * */
+	 public static boolean editProvider(Provider p,String name)
+	 {
+		 String query = "UPDATE providers SET name = ? , email = ? , phone = ? WHERE name = ?";
+		  try (Connection conn = dbConnector();
+	                PreparedStatement pstmt = conn.prepareStatement(query)) {
+	            pstmt.setString(1, p.getName());
+	            pstmt.setString(2, p.getEmail());
+	            pstmt.setString(3, p.getPhone());
+	            pstmt.setString(4,name);
+	            
+	            pstmt.executeUpdate();
+	            JOptionPane.showMessageDialog(null,"Provider Edited successfuly!");
+	            return true;
+	        } catch (SQLException e) {
+	            JOptionPane.showMessageDialog(null,e.getMessage());
+	            return false;
+	        }
+	 }
+	 /*
+	  * returns true if category inserted successfully into db
+	  */
+	 public static boolean insertCategory(String cn)
+	 {
+		 String sql = "INSERT INTO Categories(name) VALUES(?)";
+		 
+	        try (Connection conn = dbConnector();
+	                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	            pstmt.setString(1, cn);
+
+	            
+	            pstmt.executeUpdate();
+	            JOptionPane.showMessageDialog(null,"Category added successfuly!");
+	            return true;
+	        
+	        } catch (SQLException e) {
+	            JOptionPane.showMessageDialog(null,e.getMessage());
+	            return false;
+	        }
+	 }
+	 /*
+	  * returns strings array of providers Names
+	  * */
+	 
+	 public static String[] providersNames()
+	 {
+		 //saves names returned
+		 List<String> names=new ArrayList<String>();
+		 
+		 String query = "SELECT name from Providers";
+		  try (Connection conn = dbConnector();
+	                PreparedStatement pstmt = conn.prepareStatement(query)) {
+	            ResultSet rs=pstmt.executeQuery();
+	            
+	            //move on the table of objects
+	            while (rs.next()) {
+	            	//add each name to the arraylist
+	            	names.add(rs.getString("name"));
+
+	            }
+	       
+	            //return the names as array
+	            String[] namesArr = new String[names.size()];
+	            namesArr = names.toArray(namesArr);
+	            return namesArr;
+	            
+	        } catch (SQLException e) {
+	            JOptionPane.showMessageDialog(null,e.getMessage());
+	            return null;
+	        }
+	 }
+	 public static String[] categoriesNames()
+	 {
+		 //saves names returned
+		 List<String> names=new ArrayList<String>();
+		 
+		 String query = "SELECT name from Categories";
+		  try (Connection conn = dbConnector();
+	                PreparedStatement pstmt = conn.prepareStatement(query)) {
+	            ResultSet rs=pstmt.executeQuery();
+	            
+	            //move on the table of objects
+	            while (rs.next()) {
+	            	//add each name to the arraylist
+	            	names.add(rs.getString("name"));
+
+	            }
+	       
+	            //return the names as array
+	            String[] namesArr = new String[names.size()];
+	            namesArr = names.toArray(namesArr);
+	            return namesArr;
+	            
+	        } catch (SQLException e) {
+	            JOptionPane.showMessageDialog(null,e.getMessage());
+	            return null;
+	        }
+	 }
+}

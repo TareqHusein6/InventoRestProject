@@ -1,0 +1,209 @@
+
+package InvetoRestProject;
+
+import java.awt.EventQueue;
+
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+
+import java.awt.Font;
+import javax.swing.SwingConstants;
+import javax.swing.table.DefaultTableModel;
+
+import InvetoRestProject.classes.Order;
+import InvetoRestProject.classes.OrderDetails;
+import net.proteanit.sql.DbUtils;
+
+import javax.swing.JTextField;
+
+import javax.swing.JTable;
+
+import javax.swing.JButton;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Vector;
+import java.awt.event.ActionEvent;
+
+public class CreateOrder {
+
+	private JFrame frame;
+	private JTextField productQuantityField;
+	private JButton btnSaveOrder;
+	private JTable productsTable;
+	private String providerName;
+	private String userId; 
+	private SqliteConnection db;
+	private JTable orderListTable;
+	private DefaultTableModel model;
+	private Order order;
+	
+	/**
+	 * Launch the application.
+	 */
+	public static void main(String[] args) {
+		String providerName = args[0];
+		String userId= args[1];
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					CreateOrder window = new CreateOrder(providerName,userId);
+					window.frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	/**
+	 * Create the application.
+	 */
+	public CreateOrder(String providerName,String userId) {
+		this.providerName=providerName;
+		this.userId=userId;
+		this.db = new SqliteConnection();
+		this.order = new Order(providerName,userId);
+		initialize();
+	}
+
+	/**
+	 * Initialize the contents of the frame.
+	 */
+	private void initialize() {
+		frame = new JFrame();
+		frame.setBounds(100, 100, 838, 558);
+		frame.setLocationRelativeTo(null);
+		frame.setResizable(false);
+		frame.getContentPane().setLayout(null);
+		
+		 model = new DefaultTableModel(0,0);
+		 String header[] = new String[] { "ProductName","Quantity"};
+		 model.setColumnIdentifiers(header);
+		 orderListTable.setModel(model);
+		 JScrollPane scrollPaneOrderList = new JScrollPane();
+		 scrollPaneOrderList.setBounds(85, 180, 130, 203);
+		 frame.getContentPane().add(scrollPaneOrderList);
+		 scrollPaneOrderList.setViewportView(orderListTable);
+         
+         
+         
+		JLabel lblCreateOrder = new JLabel("Create Order for "+providerName);
+		lblCreateOrder.setHorizontalAlignment(SwingConstants.CENTER);
+		lblCreateOrder.setFont(new Font("Yu Gothic UI", Font.BOLD, 18));
+		lblCreateOrder.setBounds(211, 29, 280, 32);
+		frame.getContentPane().add(lblCreateOrder);
+		
+		JLabel lblNewLabel = new JLabel("Product Quantity");
+		lblNewLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		lblNewLabel.setFont(new Font("Yu Gothic UI", Font.BOLD, 14));
+		lblNewLabel.setBounds(516, 100, 115, 20);
+		frame.getContentPane().add(lblNewLabel);
+		
+		productQuantityField = new JTextField();
+		productQuantityField.setBounds(641, 102, 86, 20);
+		frame.getContentPane().add(productQuantityField);
+		productQuantityField.setColumns(10);
+		
+		JScrollPane scrollPaneProducts = new JScrollPane();
+		scrollPaneProducts.setBounds(608, 180, 163, 203);
+		frame.getContentPane().add(scrollPaneProducts);
+		productsTable.setModel(DbUtils.resultSetToTableModel(db.selectProducts()));
+		scrollPaneProducts.setViewportView(productsTable);
+		
+		JLabel lblOrder = new JLabel("Order");
+		lblOrder.setFont(new Font("Yu Gothic UI", Font.BOLD, 14));
+		lblOrder.setHorizontalAlignment(SwingConstants.CENTER);
+		lblOrder.setBounds(129, 141, 46, 20);
+		frame.getContentPane().add(lblOrder);
+
+		
+		JButton btnAddProductToOrder = new JButton("Add Product to Order");
+		btnAddProductToOrder.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				int quantity;//quantity of the same item that we want to add to order
+				boolean productFound = false;//to check if we already have the product in orders list
+				if (!(productQuantityField.getText().equals(""))&&productQuantityField.getText().matches("[0-9]+"))
+	            {
+	                try
+	                {
+	                	//get the amount of items u want from that product
+	                	int selectedRowIndex = productsTable.getSelectedRow();
+	                	quantity = Integer.parseInt(productQuantityField.getText());
+	                	
+	                    int productId=(int) productsTable.getModel().getValueAt(selectedRowIndex, 0);
+	                    String productName=(String) productsTable.getModel().getValueAt(selectedRowIndex, 1);
+	                    //add product to order
+	                    OrderDetails od = new OrderDetails(productId, order.getId(), quantity,productName);
+
+	                    //move on the list to check if the product name already exists
+	                    for(OrderDetails ob : order.getProductsArray())
+	                     {
+	                       //check if the product name already exists
+	                       if (ob.getProductName().equals(productName))
+	                        {
+	                          //if found then add product quantity to product in orderdetails list
+	                    	   int overall = ob.getQuantity()+quantity;
+	                    	   ob.setQuantity(overall);
+	                           productFound = true;
+	                           break;
+	                        }
+	                      }
+
+	                        //in case of product doesn't exist in arraylist
+	                        if (!productFound)
+	                            //add product to order arraylist
+	                            order.AddProduct(od);
+
+	                        //add product with quantity into listbox of order products
+	                        Vector<Object> data = new Vector<Object>();
+	                        data.add(productName);
+	                        data.add(quantity);
+	                        model.addRow(data);
+	                    
+	                }
+	                catch (ArrayIndexOutOfBoundsException e)
+	                {
+	                	showMessage("Please select a row first or refresh the table.","Select A Row");
+	                }
+
+
+	            }
+	            //in case of putting characters into quantity field
+	            else
+	                if (!(productQuantityField.getText().matches("[0-9]+"))&&Integer.parseInt(productQuantityField.getText())<=0)
+	                	showMessage("Only positive and above zero numbers allowed in Product Quantity field!","Positive Numbers");
+	            else
+	            	showMessage("Please fill all text fields","Empty Fields");
+				
+			}
+		});
+		btnAddProductToOrder.setFont(new Font("Yu Gothic UI", Font.BOLD, 12));
+		btnAddProductToOrder.setBounds(608, 399, 163, 23);
+		frame.getContentPane().add(btnAddProductToOrder);
+		
+		JButton btnFinishOrder = new JButton("Finish Order and Send Now");
+		btnFinishOrder.setFont(new Font("Yu Gothic UI", Font.BOLD, 12));
+		btnFinishOrder.setBounds(162, 465, 209, 32);
+		frame.getContentPane().add(btnFinishOrder);
+		
+		JLabel lblOr = new JLabel("or");
+		lblOr.setHorizontalAlignment(SwingConstants.CENTER);
+		lblOr.setFont(new Font("Yu Gothic UI", Font.BOLD, 14));
+		lblOr.setBounds(381, 473, 16, 14);
+		frame.getContentPane().add(lblOr);
+		
+		btnSaveOrder = new JButton("Save Order for Later");
+		btnSaveOrder.setFont(new Font("Yu Gothic UI", Font.BOLD, 12));
+		btnSaveOrder.setBounds(407, 470, 149, 23);
+		frame.getContentPane().add(btnSaveOrder);
+		
+		
+	}
+	//function for showing messages
+		public static void showMessage(String infoMessage,String titleBar)
+		{
+			JOptionPane.showMessageDialog(null,infoMessage,titleBar,JOptionPane.INFORMATION_MESSAGE);
+		}
+}
